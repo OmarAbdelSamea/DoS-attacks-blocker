@@ -1,44 +1,79 @@
+import abc
 from scapy.all import *
 import os
-from subprocess import *
+from typing import Final
 
-ip = get_if_addr(conf.iface)
-print(f'Local IP = {ip}')
-banned = []
-type = input('''
+TIME_INTERVAL: Final[int] = 1
+PACKET_INTERVAL: Final[int] = 10
+THRESHOLD: Final[int] = 5
+
+
+def get_already_banned_iptables():
+    cmd = "iptables -n -L INPUT | grep DROP  | awk '{print $4}'"
+    proc = os.popen(cmd)
+    dropped_ips_string = proc.read()
+    return dropped_ips_string.split()
+
+
+def get_user_input():
+    """
+    test_function does blah blah blah.
+
+    :param: none
+    :return: type
+    """
+    type = input('''
 1 to defend against TCP attacks
 2 to defend against UDP attacks
 3 to defend against ICMP attacks
 ''')
-if(type=='1'):
-    type='tcp'
-elif type=='2':
-    type='udp'
-elif type == '3':
-    type='icmp'
-else:
-    exit()
+    if(type == '1'):
+        type = 'tcp'
+    elif type == '2':
+        type = 'udp'
+    elif type == '3':
+        type = 'icmp'
+    else:
+        type = 'not-defined'
+    return type
 
-while(True):
-    srcIP = {}
-    pkts = sniff(filter = type,timeout =1)
 
-    for packet in pkts:
-        print(f"Src: {packet.getlayer(IP).src} -> dist: {packet.getlayer(IP).dst}")
+def sniff_and_count(type):
+    """
+    test_function does blah blah blah.
+
+    :param: none
+    :return: type
+    """
+    sniffed_packets = sniff(filter=type, timeout=TIME_INTERVAL, count=PACKET_INTERVAL)
+    src_ip = {}
+    for packet in sniffed_packets:
+        print(
+            f"Src: {packet.getlayer(IP).src} -> dist: {packet.getlayer(IP).dst}")
         if packet.getlayer(ICMP).type == 8:
             print(f"type: Request")
         else:
-            print(f"type: Replay")
+            print(f"type: Replay")  
+        print("--------------------\n")
         if (packet.haslayer(IP)):
-            if packet.getlayer(IP).src in srcIP :
-                srcIP[packet.getlayer(IP).src]+=1
-            else :
-                srcIP[packet.getlayer(IP).src]=1
+            if packet.getlayer(IP).src in src_ip:
+                src_ip[packet.getlayer(IP).src] += 1
+            else:
+                src_ip[packet.getlayer(IP).src] = 1
+    return src_ip
 
-    for packet, req_count in srcIP.items():
+
+def catch_dos_attacker(src_ip, banned, local_ip, type):
+    """
+    test_function does blah blah blah.
+
+    :param: none
+    :return: type
+    """
+    for packet, req_count in src_ip.items():
         if packet not in banned:
-            if req_count>=10 and packet != ip:
-                print(f"/********* BANNED : {packet} *********/")
+            if req_count > THRESHOLD and packet != local_ip:
+                print(f"/********* BANNED: {packet} NO.PACKETS: {req_count}*********/\n")
                 banned.append(packet)
                 cmd = 'iptables -A INPUT -s '+packet+' -p '+type+' -j DROP'
                 os.popen(cmd)
@@ -46,9 +81,27 @@ while(True):
                 os.popen(cmd)
                 cmd = 'iptables-save'
                 os.popen(cmd)
-                cmd=''
+                cmd = ''
                 req_count = 0
         elif req_count > 0:
-                print(f"/********* DROPPED {req_count} Requests from {packet} *********/")
-                req_count = 0
+            print(f"/********* DROPPED {req_count} packets from {packet} *********/\n")
+            req_count = 0
 
+def main():
+    get_already_banned_iptables()
+    banned = []
+    banned = get_already_banned_iptables()
+    print(banned)
+    local_ip = get_if_addr(conf.iface)
+    print(f'Local IP = {local_ip}')
+    type = get_user_input()
+    while(type == 'not-defined'):
+        print("[ERROR]: Please select 1, 2 or 3")
+        type = get_user_input()
+    while(True):
+        src_ip = {}
+        src_ip = sniff_and_count(type)
+        catch_dos_attacker(src_ip, banned, local_ip, type)
+
+if __name__ == "__main__":
+    main()

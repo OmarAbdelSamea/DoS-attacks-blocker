@@ -1,0 +1,29 @@
+[INFO 2022-02-14 23:44:07,306] :: command <iptables -n -L INPUT | grep DROP  | awk '{print $2"_"$4}'> executed
+[INFO 2022-02-14 23:44:07,308] :: added IP: 172.17.0.3 with type:tcp to banned IPs
+[INFO 2022-02-14 23:44:07,308] :: added IP: 172.17.0.5 with type:icmp to banned IPs
+[INFO 2022-02-14 23:44:07,308] :: added IP: 172.17.0.5 with type:tcp to banned IPs
+[INFO 2022-02-14 23:44:07,309] :: added IP: 172.17.0.3 with type:icmp to banned IPs
+[INFO 2022-02-14 23:44:07,309] :: added IP: 172.17.0.3 with type:udp to banned IPs
+[INFO 2022-02-14 23:44:07,309] :: host machine IP is 172.17.0.2
+[INFO 2022-02-14 23:44:09,304] :: user selected type: 3
+[INFO 2022-02-14 23:44:09,304] :: user selected wrong type: 3
+[INFO 2022-02-14 23:44:26,450] :: user selected type: icmp
+[INFO 2022-02-14 23:44:26,450] :: started packet sniffing for 10 seconds
+[INFO 2022-02-14 23:44:36,628] :: sniffed 0 packets
+[INFO 2022-02-14 23:44:36,629] :: started packet sniffing for 10 seconds
+[INFO 2022-02-14 23:44:40,500] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,502] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,503] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,505] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,508] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,511] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,514] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,516] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,520] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,521] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:40,522] :: DROPPED 10 packets from 172.17.0.3
+[INFO 2022-02-14 23:44:40,522] :: started packet sniffing for 10 seconds
+[INFO 2022-02-14 23:44:50,684] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:50,684] :: IP: 172.17.0.3 sent a packet to IP: 172.17.0.2
+[INFO 2022-02-14 23:44:50,685] :: DROPPED 2 packets from 172.17.0.3
+[INFO 2022-02-14 23:44:50,685] :: started packet sniffing for 10 seconds

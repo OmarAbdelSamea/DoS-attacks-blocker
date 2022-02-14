@@ -21,25 +21,34 @@ else:
 
 while(True):
     srcIP = {}
-    pkts = sniff(iface = 'enp0s3',filter = type,timeout =10)
+    pkts = sniff(filter = type,timeout =1)
 
     for packet in pkts:
-        if (packet.haslayer(IP) and packet.getlayer(IP).src not in banned):
+        print(f"Src: {packet.getlayer(IP).src} -> dist: {packet.getlayer(IP).dst}")
+        if packet.getlayer(ICMP).type == 8:
+            print(f"type: Request")
+        else:
+            print(f"type: Replay")
+        if (packet.haslayer(IP)):
             if packet.getlayer(IP).src in srcIP :
                 srcIP[packet.getlayer(IP).src]+=1
             else :
                 srcIP[packet.getlayer(IP).src]=1
-            if srcIP[packet.getlayer(IP).src]>9 and packet.getlayer(IP).src != ip and packet.getlayer(IP).src not in banned:
-                print(f"BANNED : {packet.getlayer(IP).src}")
-                banned.append(packet.getlayer(IP).src)
-                cmd = 'iptables -A INPUT -s '+packet.getlayer(IP).src+' -p '+type+' -j DROP'
+
+    for packet, req_count in srcIP.items():
+        if packet not in banned:
+            if req_count>=10 and packet != ip:
+                print(f"/********* BANNED : {packet} *********/")
+                banned.append(packet)
+                cmd = 'iptables -A INPUT -s '+packet+' -p '+type+' -j DROP'
+                os.popen(cmd)
+                cmd = 'iptables -A OUTPUT -s '+packet+' -p '+type+' -j ACCEPT'
                 os.popen(cmd)
                 cmd = 'iptables-save'
                 os.popen(cmd)
                 cmd=''
-                srcIP[packet.getlayer(IP).src] = 0
+                req_count = 0
+        elif req_count > 0:
+                print(f"/********* DROPPED {req_count} Requests from {packet} *********/")
+                req_count = 0
 
-
-
-#sudo iptables -P INPUT ACCEPT
-#sudo iptables -F

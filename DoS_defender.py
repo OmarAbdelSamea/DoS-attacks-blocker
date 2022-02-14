@@ -1,18 +1,25 @@
-import abc
 from scapy.all import *
 import os
 from typing import Final
 
-TIME_INTERVAL: Final[int] = 1
+TIME_INTERVAL: Final[int] = 10
 PACKET_INTERVAL: Final[int] = 10
-THRESHOLD: Final[int] = 5
+THRESHOLD: Final[int] = 3
 
 
 def get_already_banned_iptables():
-    cmd = "iptables -n -L INPUT | grep DROP  | awk '{print $4}'"
+    cmd = "iptables -n -L INPUT | grep DROP  | awk '{print $2\"_\"$4}'"
     proc = os.popen(cmd)
+    dropped_ips = {}
     dropped_ips_string = proc.read()
-    return dropped_ips_string.split()
+    dropped_ips_string = dropped_ips_string.split()
+    for ip_string in dropped_ips_string:
+        type,ip = ip_string.split('_')
+        if ip in dropped_ips:
+            dropped_ips[ip] += ","+type
+        else:
+            dropped_ips[ip] = type
+    return dropped_ips    
 
 
 def get_user_input():
@@ -27,7 +34,7 @@ def get_user_input():
 2 to defend against UDP attacks
 3 to defend against ICMP attacks
 ''')
-    if(type == '1'):
+    if(type == '1'):      
         type = 'tcp'
     elif type == '2':
         type = 'udp'
@@ -50,10 +57,10 @@ def sniff_and_count(type):
     for packet in sniffed_packets:
         print(
             f"Src: {packet.getlayer(IP).src} -> dist: {packet.getlayer(IP).dst}")
-        if packet.getlayer(ICMP).type == 8:
-            print(f"type: Request")
-        else:
-            print(f"type: Replay")  
+        # if packet.getlayer(TCP).type == 8:
+        #     print(f"type: Request")
+        # else:   
+        #     print(f"type: Replay")  
         print("--------------------\n")
         if (packet.haslayer(IP)):
             if packet.getlayer(IP).src in src_ip:
@@ -71,10 +78,13 @@ def catch_dos_attacker(src_ip, banned, local_ip, type):
     :return: type
     """
     for packet, req_count in src_ip.items():
-        if packet not in banned:
+        if (packet not in banned) or ((packet in banned) and (type not in banned[packet])):
             if req_count > THRESHOLD and packet != local_ip:
-                print(f"/********* BANNED: {packet} NO.PACKETS: {req_count}*********/\n")
-                banned.append(packet)
+                print(f"/********* BANNED: {packet} NO.PACKETS: {req_count} *********/\n")
+                if packet in banned:
+                    banned[packet] += ","+type
+                else:
+                    banned[packet] = type
                 cmd = 'iptables -A INPUT -s '+packet+' -p '+type+' -j DROP'
                 os.popen(cmd)
                 cmd = 'iptables -A OUTPUT -s '+packet+' -p '+type+' -j ACCEPT'
@@ -83,15 +93,13 @@ def catch_dos_attacker(src_ip, banned, local_ip, type):
                 os.popen(cmd)
                 cmd = ''
                 req_count = 0
-        elif req_count > 0:
+        elif req_count > 0 and (type in banned[packet]):
             print(f"/********* DROPPED {req_count} packets from {packet} *********/\n")
             req_count = 0
 
 def main():
-    get_already_banned_iptables()
-    banned = []
+    banned = {}
     banned = get_already_banned_iptables()
-    print(banned)
     local_ip = get_if_addr(conf.iface)
     print(f'Local IP = {local_ip}')
     type = get_user_input()
@@ -105,3 +113,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
